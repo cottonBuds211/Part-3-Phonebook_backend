@@ -32,10 +32,10 @@ const Person = require("./models/persons");
 // 	},
 // ];
 
-const generateId = () => {
-	const id = Math.floor(Math.random() * 2000);
-	return String(id);
-};
+// const generateId = () => {
+// 	const id = Math.floor(Math.random() * 2000);
+// 	return String(id);
+// };
 
 morgan.token("body", (req, res) => JSON.stringify(req.body));
 
