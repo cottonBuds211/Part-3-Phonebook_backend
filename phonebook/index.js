@@ -46,56 +46,64 @@ app.use(
 );
 app.use(cors());
 
-app.get("/", (request, response) => {
-	response.send("<h1>hello there</h1>");
+app.get("/", (req, res) => {
+	res.send("<h1>hello there</h1>");
 });
 
-app.get("/api/persons", (request, response) => {
+app.get("/api/persons", (req, res) => {
 	Person.find({}).then((persons) => {
-		response.json(persons);
+		res.json(persons);
+		console.log(persons);
 	});
 });
-// app.get("/info", (request, response) => {
-// 	const date = new Date();
-// 	const info = `<p>Phone book has info for ${persons.length} people <br /> ${date} </p>`;
+app.get("/info", (req, res) => {
+	const date = new Date();
+	const persons = Person.find({}).then((result) => result);
+	const info = `<p>Phone book has info for ${persons.length} people <br /> ${date} </p>`;
 
-// 	response.send(info).end();
-// });
+	res.send(info).end();
+});
 
-// app.get("/api/persons/:id", (request, response) => {
-// 	const id = request.params.id;
-// 	const person = persons.find((person) => person.id === id);
-// 	if (person) {
-// 		response.json(person);
-// 	} else {
-// 		response.status(404).end();
-// 	}
-// });
+app.get("/api/persons/:id", (req, res, next) => {
+	Person.findById(req.params.id)
+		.then((result) => res.json(result))
+		.catch((error) => next(error));
+});
 
-// app.delete("/api/persons/:id", (request, response) => {
-// 	const id = request.params.id;
-// 	persons = persons.filter((person) => person.id !== id);
-// 	response.status(204).end();
-// });
+app.delete("/api/persons/:id", (req, res, next) => {
+	Person.findByIdAndDelete(req.params.id)
+		.then((result) => res.status(204).end())
+		.catch((error) => next(error));
+});
 
-// app.post("/api/persons", (request, response) => {
-// 	const body = request.body;
-// 	const duplicate = persons.find((p) => p.name === body.name);
-// 	if (duplicate) {
-// 		response.status(400).json({ error: "must be unique" });
-// 	} else if (!body.name || !body.number) {
-// 		response.status(400).json({ error: "name or number missing" });
-// 	} else {
-// 		const person = {
-// 			name: body.name,
-// 			number: body.number,
-// 			id: generateId(),
-// 		};
+app.post("/api/persons", (req, res, next) => {
+	const body = req.body;
 
-// 		persons = persons.concat(person);
-// 		response.json(person);
-// 	}
-// });
+	if (!body.name || !body.number) {
+		res.status(400).json({ error: "name or number missing" });
+	} else {
+		const person = new Person({
+			name: body.name,
+			number: body.number,
+		});
+
+		person
+			.save()
+			.then((result) => console.log(`${body.name} saved to database`))
+			.catch((error) => next(error));
+		res.json(person);
+	}
+});
+
+const errorHandler = (error, req, res, next) => {
+	console.error(error.name);
+	if (error.name === "CastError") {
+		res.status(400).json({ error: "malformatted id" });
+	}
+	next(error);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
